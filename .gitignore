@@ -1,0 +1,10 @@
+node_modules/
+database.sqlite
+npm-debug.log*
+dist/
+graphify-out/
+.sixth/
+.codex/
+New folder/
+ba9b6088-37b3-47d6-b530-b66c5e4108d5.png
+ตราสำนักงานคณะกรรมการการอาชีวศึกษา.svg.png
