@@ -39,7 +39,7 @@ function applySections(sections) {
       caption: item.caption,
       image_caption: item.caption,
       images: item.images,
-      content_images: item.images
+      content_images: []
     };
   });
 }
