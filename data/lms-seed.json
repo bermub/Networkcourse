@@ -304,27 +304,81 @@
       "lesson_sections": [
         {
           "title": "แนวคิดระบบเครือข่ายในองค์กร",
-          "detail": "Enterprise Network คือโครงสร้างพื้นฐานที่เชื่อมโยงคอมพิวเตอร์ เซิร์ฟเวอร์ ระบบจัดเก็บข้อมูล และผู้ใช้งาน เพื่อให้แลกเปลี่ยนข้อมูล ใช้ทรัพยากรร่วมกัน และสนับสนุนงานธุรกิจได้อย่างต่อเนื่อง"
+          "detail": "Enterprise Network คือโครงสร้างพื้นฐานที่เชื่อมโยงคอมพิวเตอร์ เซิร์ฟเวอร์ ระบบจัดเก็บข้อมูล และผู้ใช้งาน เพื่อให้แลกเปลี่ยนข้อมูล ใช้ทรัพยากรร่วมกัน และสนับสนุนงานธุรกิจได้อย่างต่อเนื่อง",
+          "caption": "Enterprise network overview: office LAN, core, security, cloud, and data center",
+          "image_caption": "Enterprise network overview: office LAN, core, security, cloud, and data center",
+          "images": [
+            "/assets/lms-unit-01/1-12.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-12.png"
+          ]
         },
         {
           "title": "คุณลักษณะสำคัญของ Enterprise Network",
-          "detail": "เอกสารประกอบการสอนระบุคุณลักษณะหลัก ได้แก่ Reliability, Scalability, Security, QoS และ Manageability ซึ่งต้องนำมาพิจารณาก่อนเลือกอุปกรณ์หรือออกแบบ topology"
+          "detail": "เอกสารประกอบการสอนระบุคุณลักษณะหลัก ได้แก่ Reliability, Scalability, Security, QoS และ Manageability ซึ่งต้องนำมาพิจารณาก่อนเลือกอุปกรณ์หรือออกแบบ topology",
+          "caption": "Traffic, availability, security, and monitoring requirements for enterprise networks",
+          "image_caption": "Traffic, availability, security, and monitoring requirements for enterprise networks",
+          "images": [
+            "/assets/lms-unit-01/1-15.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-15.png"
+          ]
         },
         {
           "title": "สถาปัตยกรรมแบบ Three-Tier",
-          "detail": "Core Layer ทำหน้าที่ส่งผ่านข้อมูลความเร็วสูง, Distribution Layer ควบคุมนโยบาย Routing, VLAN และ QoS, ส่วน Access Layer เชื่อมต่อ PC, Printer, IP Phone และ Access Point"
+          "detail": "Core Layer ทำหน้าที่ส่งผ่านข้อมูลความเร็วสูง, Distribution Layer ควบคุมนโยบาย Routing, VLAN และ QoS, ส่วน Access Layer เชื่อมต่อ PC, Printer, IP Phone และ Access Point",
+          "caption": "Three-tier campus design and spine-leaf comparison",
+          "image_caption": "Three-tier campus design and spine-leaf comparison",
+          "images": [
+            "/assets/lms-unit-01/1-1.png",
+            "/assets/lms-unit-01/1-2.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-1.png",
+            "/assets/lms-unit-01/1-2.png"
+          ]
         },
         {
           "title": "Topology และแบบจำลองเครือข่าย",
-          "detail": "ผู้เรียนต้องแยกความแตกต่างของ Star, Ring, Bus, Mesh, Tree และ Hybrid Topology รวมถึงใช้ OSI และ TCP/IP Model เป็นกรอบคิดสำหรับออกแบบและวิเคราะห์ปัญหา"
+          "detail": "ผู้เรียนต้องแยกความแตกต่างของ Star, Ring, Bus, Mesh, Tree และ Hybrid Topology รวมถึงใช้ OSI และ TCP/IP Model เป็นกรอบคิดสำหรับออกแบบและวิเคราะห์ปัญหา",
+          "caption": "Topology choices with OSI/TCP-IP models for network analysis",
+          "image_caption": "Topology choices with OSI/TCP-IP models for network analysis",
+          "images": [
+            "/assets/lms-unit-01/1-14.png",
+            "/assets/lms-unit-01/1-3.png",
+            "/assets/lms-unit-01/1-3-1.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-14.png",
+            "/assets/lms-unit-01/1-3.png",
+            "/assets/lms-unit-01/1-3-1.png"
+          ]
         },
         {
           "title": "กระบวนการวิเคราะห์ความต้องการ",
-          "detail": "เริ่มจากสำรวจจำนวนผู้ใช้ แอปพลิเคชันสำคัญ ปริมาณข้อมูล ระบบเดิม จุดเสี่ยง และเป้าหมายอนาคต แล้วจัดทำ requirement ที่ตรวจสอบย้อนกลับได้"
+          "detail": "เริ่มจากสำรวจจำนวนผู้ใช้ แอปพลิเคชันสำคัญ ปริมาณข้อมูล ระบบเดิม จุดเสี่ยง และเป้าหมายอนาคต แล้วจัดทำ requirement ที่ตรวจสอบย้อนกลับได้",
+          "caption": "Requirements analysis workflow and current-state discovery",
+          "image_caption": "Requirements analysis workflow and current-state discovery",
+          "images": [
+            "/assets/lms-unit-01/1-11.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-11.png"
+          ]
         },
         {
           "title": "หลักฐานการเรียนรู้",
-          "detail": "ผลลัพธ์ของหน่วยนี้คือเอกสาร Requirement, Current State Diagram, Risk/Gap Analysis และ Target Network Concept ที่อธิบายเหตุผลเชิงออกแบบได้"
+          "detail": "ผลลัพธ์ของหน่วยนี้คือเอกสาร Requirement, Current State Diagram, Risk/Gap Analysis และ Target Network Concept ที่อธิบายเหตุผลเชิงออกแบบได้",
+          "caption": "Defense-in-depth evidence connects design decisions to security and risk reduction",
+          "image_caption": "Defense-in-depth evidence connects design decisions to security and risk reduction",
+          "images": [
+            "/assets/lms-unit-01/1-13.png"
+          ],
+          "content_images": [
+            "/assets/lms-unit-01/1-13.png"
+          ]
         }
       ],
       "learning_steps": [

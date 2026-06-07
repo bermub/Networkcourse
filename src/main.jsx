@@ -193,28 +193,28 @@ const defaultProfessionalScenario = {
 const unitLessonVisuals = {
   1: [
     {
-      images: ["/assets/lms-unit-01/1-13.png"],
+      images: ["/assets/lms-unit-01/1-12.png"],
       caption: "Enterprise network overview: office LAN, core, security, cloud, and data center"
     },
     {
-      images: ["/assets/lms-unit-01/1-14.png", "/assets/lms-unit-01/1-15.png"],
-      caption: "Security, availability, monitoring, and manageability as design requirements"
+      images: ["/assets/lms-unit-01/1-15.png"],
+      caption: "Traffic, availability, security, and monitoring requirements for enterprise networks"
     },
     {
       images: ["/assets/lms-unit-01/1-1.png", "/assets/lms-unit-01/1-2.png"],
       caption: "Three-tier campus design and spine-leaf comparison"
     },
     {
-      images: ["/assets/lms-unit-01/1-4.png", "/assets/lms-unit-01/1-3.png", "/assets/lms-unit-01/1-3-1.png"],
+      images: ["/assets/lms-unit-01/1-14.png", "/assets/lms-unit-01/1-3.png", "/assets/lms-unit-01/1-3-1.png"],
       caption: "Topology choices with OSI/TCP-IP models for network analysis"
     },
     {
-      images: ["/assets/lms-unit-01/1-12.png", "/assets/lms-unit-01/1-11.png"],
+      images: ["/assets/lms-unit-01/1-11.png"],
       caption: "Requirements analysis workflow and current-state discovery"
     },
     {
-      images: ["/assets/lms-unit-01/1-15.png"],
-      caption: "Evidence connects design decisions to measurable network operation"
+      images: ["/assets/lms-unit-01/1-13.png"],
+      caption: "Defense-in-depth evidence connects design decisions to security and risk reduction"
     }
   ],
   2: [
