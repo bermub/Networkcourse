@@ -1955,6 +1955,21 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     updateLmsUnitForm(updater, { dirty: true });
   }
 
+  function confirmDiscardLmsUnitChanges() {
+    if (!lmsUnitDirty) return true;
+    return window.confirm("มีการแก้ไขหน่วยเรียนที่ยังไม่ได้บันทึก ต้องการออกจากหน้านี้หรือโหลดข้อมูลใหม่หรือไม่?");
+  }
+
+  function handleAdminBack() {
+    if (!confirmDiscardLmsUnitChanges()) return;
+    onBack();
+  }
+
+  async function refreshAdminData() {
+    if (!confirmDiscardLmsUnitChanges()) return;
+    await loadAdminData();
+  }
+
   async function adminRequest(path, options = {}) {
     return api(path, {
       ...options,
@@ -1998,6 +2013,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function selectLmsUnit(unit) {
+    if (unit.id !== lmsUnitFormRef.current.id && !confirmDiscardLmsUnitChanges()) return;
     setError("");
     setNotice("");
     updateLmsUnitForm(lmsUnitToForm(unit));
@@ -2140,6 +2156,16 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   useEffect(() => {
     if (admin?.token) loadAdminData().catch((err) => setError(err.message));
   }, [admin?.token]);
+
+  useEffect(() => {
+    if (!lmsUnitDirty) return undefined;
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [lmsUnitDirty]);
 
   async function submitLogin(event) {
     event.preventDefault();
@@ -2399,6 +2425,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function logout() {
+    if (!confirmDiscardLmsUnitChanges()) return;
     localStorage.removeItem("nlp-admin");
     setAdmin(null);
   }
@@ -2438,8 +2465,8 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
           </div>
           <nav className="flex flex-wrap gap-2">
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            <button className="nav-chip" onClick={loadAdminData}>Refresh</button>
-            <button className="nav-chip" onClick={onBack}>หน้าแรก</button>
+              <button className="nav-chip" onClick={refreshAdminData}>Refresh</button>
+            <button className="nav-chip" onClick={handleAdminBack}>หน้าแรก</button>
             <button className="nav-chip" onClick={logout}>Logout Admin</button>
           </nav>
         </div>
@@ -2827,7 +2854,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                 <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-cyber-lime">LMS Assessment Analytics</p>
                 <h2 className="mt-2 text-2xl font-extrabold">วิเคราะห์ข้อสอบรายข้อ</h2>
               </div>
-              <button className="mini-button" type="button" onClick={loadAdminData}>โหลดรายงานใหม่</button>
+              <button className="mini-button" type="button" onClick={refreshAdminData}>โหลดรายงานใหม่</button>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               {(lmsReport?.unitStats || []).slice(0, 15).map((item) => (
@@ -2882,7 +2909,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                 <h2 className="mt-2 text-2xl font-extrabold">วิเคราะห์ผู้เรียนรายบุคคล</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">แยกคะแนนแบบทดสอบท้ายบท คะแนนเกม ความก้าวหน้ารายหน่วย และข้อเสนอแนะรายบุคคลออกจากหน้าวิเคราะห์ข้อสอบ</p>
               </div>
-              <button className="mini-button" type="button" onClick={loadAdminData}>โหลดข้อมูลผู้เรียนใหม่</button>
+              <button className="mini-button" type="button" onClick={refreshAdminData}>โหลดข้อมูลผู้เรียนใหม่</button>
             </div>
           </div>
           <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
