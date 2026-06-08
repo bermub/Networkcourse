@@ -1890,6 +1890,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   const lmsUnitFormRef = useRef(lmsUnitForm);
   const [lmsUnitSaving, setLmsUnitSaving] = useState(false);
   const [lmsUnitDirty, setLmsUnitDirty] = useState(false);
+  const [lmsUnitUploading, setLmsUnitUploading] = useState(false);
   const [categoryForm, setCategoryForm] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [stats, setStats] = useState(null);
@@ -2253,6 +2254,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     if (!selectedFile) return;
     setError("");
     setNotice("");
+    setLmsUnitUploading(true);
     try {
       const result = await adminRequest("/api/admin/uploads", {
         method: "POST",
@@ -2269,6 +2271,8 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
       await saveLmsUnitDraft(nextForm, "อัปโหลดและบันทึกรูปหน้าปกหน่วยเรียนแล้ว");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLmsUnitUploading(false);
     }
   }
 
@@ -2277,6 +2281,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     if (!selectedFiles.length) return;
     setError("");
     setNotice("");
+    setLmsUnitUploading(true);
     try {
       const payloadFiles = await Promise.all(selectedFiles.map(async (file) => ({
         name: file.name,
@@ -2300,6 +2305,8 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
       await saveLmsUnitDraft(nextForm, field === "content_images" ? "อัปโหลดและบันทึกรูปในเนื้อหาแล้ว" : "อัปโหลดและบันทึกรูปบทเรียนแล้ว");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLmsUnitUploading(false);
     }
   }
 
@@ -2672,15 +2679,15 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
           </div>
 
           <form className="admin-panel unit-content-editor" onSubmit={submitLmsUnit}>
-            <div className={`unit-save-state ${lmsUnitSaving ? "saving" : lmsUnitDirty ? "dirty" : "saved"}`}>
-              {lmsUnitSaving ? "Saving..." : lmsUnitDirty ? "Unsaved changes" : "Saved"}
+            <div className={`unit-save-state ${lmsUnitUploading ? "uploading" : lmsUnitSaving ? "saving" : lmsUnitDirty ? "dirty" : "saved"}`}>
+              {lmsUnitUploading ? "Uploading..." : lmsUnitSaving ? "Saving..." : lmsUnitDirty ? "Unsaved changes" : "Saved"}
             </div>
             <div className="unit-editor-toolbar">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-cyber-lime">Content Editor</p>
                 <h2 className="mt-2 text-2xl font-extrabold">แก้ไขเนื้อหา หน่วยที่ {lmsUnitForm.unit_no}</h2>
               </div>
-              <button className="cyber-button" type="submit" disabled={!lmsUnitForm.id || lmsUnitSaving}>{lmsUnitSaving ? "กำลังบันทึก..." : "บันทึกหน่วยเรียน"}</button>
+              <button className="cyber-button" type="submit" disabled={!lmsUnitForm.id || lmsUnitSaving || lmsUnitUploading}>{lmsUnitSaving ? "กำลังบันทึก..." : "บันทึกหน่วยเรียน"}</button>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-[120px_1fr]">
@@ -2698,7 +2705,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
               <div className="grid gap-2">
                 <label className="activity-upload-label">
                   <span>อัปโหลดรูปหน้าปกหน่วยเรียน</span>
-                  <input type="file" accept="image/*" onChange={(event) => uploadLmsUnitImage(event.target.files)} />
+                  <input type="file" accept="image/*" disabled={lmsUnitSaving || lmsUnitUploading} onChange={(event) => uploadLmsUnitImage(event.target.files)} />
                 </label>
                 <input className="cyber-input" placeholder="URL รูปภาพประกอบหน่วย" value={lmsUnitForm.image} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, image: event.target.value })} />
               </div>
@@ -2709,8 +2716,8 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3>รูปภาพและหัวข้อบทเรียน</h3>
                 <div className="flex flex-wrap gap-2">
-                  <button className="mini-button" type="button" onClick={addLessonSection}>เพิ่มหัวข้อบทเรียน</button>
-                  <button className="mini-button" type="button" onClick={saveCurrentLmsUnitImages}>บันทึกรูปทั้งหมด</button>
+                  <button className="mini-button" type="button" disabled={lmsUnitSaving || lmsUnitUploading} onClick={addLessonSection}>เพิ่มหัวข้อบทเรียน</button>
+                  <button className="mini-button" type="button" disabled={lmsUnitSaving || lmsUnitUploading} onClick={saveCurrentLmsUnitImages}>บันทึกรูปทั้งหมด</button>
                 </div>
               </div>
               <div className="mt-3 grid gap-4">
@@ -2727,7 +2734,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                     <textarea className="cyber-input mt-3" rows="3" placeholder="รายละเอียดบทเรียน" value={section.detail || ""} onChange={(event) => updateLessonSection(sectionIndex, { detail: event.target.value })} />
                     <label className="activity-upload-label mt-3">
                       <span>อัปโหลดรูปของหัวข้อนี้ (ได้หลายรูป)</span>
-                      <input type="file" accept="image/*" multiple onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files)} />
+                      <input type="file" accept="image/*" multiple disabled={lmsUnitSaving || lmsUnitUploading} onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files)} />
                     </label>
                     <div className="lesson-image-list mt-3">
                       {(section.images || []).map((image, imageIndex) => (
@@ -2740,15 +2747,15 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                         </div>
                       ))}
                     </div>
-                    <button className="mini-button mt-3" type="button" onClick={() => addLessonSectionImage(sectionIndex)}>เพิ่มช่องรูป</button>
+                    <button className="mini-button mt-3" type="button" disabled={lmsUnitSaving || lmsUnitUploading} onClick={() => addLessonSectionImage(sectionIndex)}>เพิ่มช่องรูป</button>
                     <div className="content-image-editor mt-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <strong>รูปในเนื้อหาอ่านเพิ่มเติม</strong>
-                        <button className="mini-button" type="button" onClick={() => addLessonSectionImage(sectionIndex, "content_images")}>เพิ่มช่องรูปในเนื้อหา</button>
+                        <button className="mini-button" type="button" disabled={lmsUnitSaving || lmsUnitUploading} onClick={() => addLessonSectionImage(sectionIndex, "content_images")}>เพิ่มช่องรูปในเนื้อหา</button>
                       </div>
                       <label className="activity-upload-label mt-3">
                         <span>อัปโหลดรูปในเนื้อหา (ได้หลายรูป)</span>
-                        <input type="file" accept="image/*" multiple onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files, "content_images")} />
+                        <input type="file" accept="image/*" multiple disabled={lmsUnitSaving || lmsUnitUploading} onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files, "content_images")} />
                       </label>
                       <div className="lesson-image-list mt-3">
                         {(section.content_images || []).map((image, imageIndex) => (

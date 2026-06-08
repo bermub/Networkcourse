@@ -2468,6 +2468,11 @@ textarea.cyber-input {
   color: #00e5ff;
 }
 
+.unit-save-state.uploading {
+  border-color: rgba(168, 85, 247, 0.48);
+  color: #c084fc;
+}
+
 .unit-save-state.saved {
   border-color: rgba(200, 255, 77, 0.45);
   color: #c8ff4d;
