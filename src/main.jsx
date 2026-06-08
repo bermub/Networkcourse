@@ -300,6 +300,15 @@ function normalizeImageList(value) {
   return list.map((item) => String(item || "").trim()).filter(Boolean);
 }
 
+function uniqueImageList(value, seen = new Set()) {
+  return normalizeImageList(value).filter((image) => {
+    const key = image.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeLessonSections(value, fallbackTitles = [], fallbackDetails = []) {
   const sections = Array.isArray(value) ? value : [];
   const normalized = sections.map((section, index) => {
@@ -348,12 +357,13 @@ function cleanUnitPayload(form) {
     payload[field] = normalizeEditableList(form[field]).map((item) => item.trim()).filter(Boolean);
   }
   payload.unit_no = Number(payload.unit_no) || 1;
+  const usedLessonImages = new Set();
   payload.lesson_sections = normalizeLessonSections(form.lesson_sections, payload.key_topics, payload.content).map((section) => ({
     title: section.title,
     detail: section.detail,
     caption: section.caption,
-    images: normalizeImageList(section.images),
-    content_images: normalizeImageList(section.content_images)
+    images: uniqueImageList(section.images, usedLessonImages),
+    content_images: uniqueImageList(section.content_images, usedLessonImages)
   }));
   payload.external_resources = [];
   return payload;
@@ -1878,6 +1888,8 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   const [lmsUnits, setLmsUnits] = useState([]);
   const [lmsUnitForm, setLmsUnitForm] = useState(lmsUnitToForm(null));
   const lmsUnitFormRef = useRef(lmsUnitForm);
+  const [lmsUnitSaving, setLmsUnitSaving] = useState(false);
+  const [lmsUnitDirty, setLmsUnitDirty] = useState(false);
   const [categoryForm, setCategoryForm] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [stats, setStats] = useState(null);
@@ -1929,12 +1941,17 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     lmsUnitFormRef.current = lmsUnitForm;
   }, [lmsUnitForm]);
 
-  function updateLmsUnitForm(updater) {
+  function updateLmsUnitForm(updater, options = {}) {
     setLmsUnitForm((current) => {
       const next = typeof updater === "function" ? updater(current) : updater;
       lmsUnitFormRef.current = next;
       return next;
     });
+    if (options.dirty) setLmsUnitDirty(true);
+  }
+
+  function editLmsUnitForm(updater) {
+    updateLmsUnitForm(updater, { dirty: true });
   }
 
   async function adminRequest(path, options = {}) {
@@ -1967,6 +1984,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
       lmsUnitFormRef.current = next;
       return next;
     });
+    setLmsUnitDirty(false);
     setActivities(nextActivities);
     setActivityPage((page) => Math.min(page, Math.max(1, Math.ceil(nextActivities.length / activityPageSize))));
     setActivityCategories(nextCategories.length ? nextCategories : defaultActivityCategories.map((name, index) => ({ id: `seed-${index}`, name })));
@@ -1982,28 +2000,29 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     setError("");
     setNotice("");
     updateLmsUnitForm(lmsUnitToForm(unit));
+    setLmsUnitDirty(false);
   }
 
   function updateLmsUnitArray(field, index, value) {
-    setLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       [field]: current[field].map((item, itemIndex) => itemIndex === index ? value : item)
     }));
   }
 
   function addLmsUnitArrayItem(field) {
-    setLmsUnitForm((current) => ({ ...current, [field]: [...(current[field] || []), ""] }));
+    editLmsUnitForm((current) => ({ ...current, [field]: [...(current[field] || []), ""] }));
   }
 
   function removeLmsUnitArrayItem(field, index) {
-    setLmsUnitForm((current) => {
+    editLmsUnitForm((current) => {
       const next = (current[field] || []).filter((_, itemIndex) => itemIndex !== index);
       return { ...current, [field]: next.length ? next : [""] };
     });
   }
 
   function updateLessonSection(index, updates) {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: (current.lesson_sections || []).map((section, sectionIndex) => (
         sectionIndex === index ? { ...section, ...updates } : section
@@ -2012,7 +2031,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function addLessonSection() {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: [
         ...(current.lesson_sections || []),
@@ -2022,14 +2041,14 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function removeLessonSection(index) {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: (current.lesson_sections || []).filter((_, sectionIndex) => sectionIndex !== index)
     }));
   }
 
   function updateLessonSectionImage(sectionIndex, imageIndex, value, field = "images") {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: (current.lesson_sections || []).map((section, index) => {
         if (index !== sectionIndex) return section;
@@ -2041,7 +2060,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function addLessonSectionImage(sectionIndex, field = "images") {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: (current.lesson_sections || []).map((section, index) => (
         index === sectionIndex ? { ...section, [field]: [...(section[field] || []), ""] } : section
@@ -2050,7 +2069,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
   }
 
   function removeLessonSectionImage(sectionIndex, imageIndex, field = "images") {
-    updateLmsUnitForm((current) => ({
+    editLmsUnitForm((current) => ({
       ...current,
       lesson_sections: (current.lesson_sections || []).map((section, index) => (
         index === sectionIndex
@@ -2066,6 +2085,7 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
     if (!currentForm.id) return;
     setError("");
     setNotice("");
+    setLmsUnitSaving(true);
     try {
       const updated = await adminRequest(`/api/admin/lms-units/${currentForm.id}`, {
         method: "PUT",
@@ -2073,23 +2093,35 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
       });
       setLmsUnits((current) => current.map((unit) => unit.id === updated.id ? updated : unit).sort((a, b) => a.unit_no - b.unit_no));
       updateLmsUnitForm(lmsUnitToForm(updated));
-      await loadAdminData();
+      setLmsUnitDirty(false);
       setNotice(`บันทึกเนื้อหาหน่วยที่ ${updated.unit_no} แล้ว`);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLmsUnitSaving(false);
     }
   }
 
   async function saveLmsUnitDraft(nextForm, message) {
     updateLmsUnitForm(nextForm);
     if (!nextForm.id) return;
-    const updated = await adminRequest(`/api/admin/lms-units/${nextForm.id}`, {
-      method: "PUT",
-      body: JSON.stringify(cleanUnitPayload(nextForm))
-    });
-    setLmsUnits((current) => current.map((unit) => unit.id === updated.id ? updated : unit).sort((a, b) => a.unit_no - b.unit_no));
-    updateLmsUnitForm(lmsUnitToForm(updated));
-    setNotice(message || `บันทึกเนื้อหาหน่วยที่ ${updated.unit_no} แล้ว`);
+    setError("");
+    setNotice("");
+    setLmsUnitSaving(true);
+    try {
+      const updated = await adminRequest(`/api/admin/lms-units/${nextForm.id}`, {
+        method: "PUT",
+        body: JSON.stringify(cleanUnitPayload(nextForm))
+      });
+      setLmsUnits((current) => current.map((unit) => unit.id === updated.id ? updated : unit).sort((a, b) => a.unit_no - b.unit_no));
+      updateLmsUnitForm(lmsUnitToForm(updated));
+      setLmsUnitDirty(false);
+      setNotice(message || `บันทึกเนื้อหาหน่วยที่ ${updated.unit_no} แล้ว`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLmsUnitSaving(false);
+    }
   }
 
   async function saveCurrentLmsUnitImages() {
@@ -2639,22 +2671,25 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
             </div>
           </div>
 
-          <form className="admin-panel" onSubmit={submitLmsUnit}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <form className="admin-panel unit-content-editor" onSubmit={submitLmsUnit}>
+            <div className={`unit-save-state ${lmsUnitSaving ? "saving" : lmsUnitDirty ? "dirty" : "saved"}`}>
+              {lmsUnitSaving ? "Saving..." : lmsUnitDirty ? "Unsaved changes" : "Saved"}
+            </div>
+            <div className="unit-editor-toolbar">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-cyber-lime">Content Editor</p>
                 <h2 className="mt-2 text-2xl font-extrabold">แก้ไขเนื้อหา หน่วยที่ {lmsUnitForm.unit_no}</h2>
               </div>
-              <button className="cyber-button" type="submit" disabled={!lmsUnitForm.id}>บันทึกหน่วยเรียน</button>
+              <button className="cyber-button" type="submit" disabled={!lmsUnitForm.id || lmsUnitSaving}>{lmsUnitSaving ? "กำลังบันทึก..." : "บันทึกหน่วยเรียน"}</button>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-[120px_1fr]">
-              <input className="cyber-input" type="number" min="1" value={lmsUnitForm.unit_no} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, unit_no: event.target.value })} />
-              <input className="cyber-input" placeholder="ชื่อหน่วยเรียน" value={lmsUnitForm.title} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, title: event.target.value })} required />
+              <input className="cyber-input" type="number" min="1" value={lmsUnitForm.unit_no} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, unit_no: event.target.value })} />
+              <input className="cyber-input" placeholder="ชื่อหน่วยเรียน" value={lmsUnitForm.title} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, title: event.target.value })} required />
             </div>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <input className="cyber-input" placeholder="ชื่อบทเรียน/หัวข้อหน้าเรียน" value={lmsUnitForm.lesson_title} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, lesson_title: event.target.value })} />
-              <input className="cyber-input" placeholder="ระยะ/หมวดการเรียนรู้" value={lmsUnitForm.phase} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, phase: event.target.value })} />
+              <input className="cyber-input" placeholder="ชื่อบทเรียน/หัวข้อหน้าเรียน" value={lmsUnitForm.lesson_title} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, lesson_title: event.target.value })} />
+              <input className="cyber-input" placeholder="ระยะ/หมวดการเรียนรู้" value={lmsUnitForm.phase} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, phase: event.target.value })} />
             </div>
             <div className="unit-image-editor mt-3">
               <div className="image-slot">
@@ -2665,10 +2700,10 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                   <span>อัปโหลดรูปหน้าปกหน่วยเรียน</span>
                   <input type="file" accept="image/*" onChange={(event) => uploadLmsUnitImage(event.target.files)} />
                 </label>
-                <input className="cyber-input" placeholder="URL รูปภาพประกอบหน่วย" value={lmsUnitForm.image} onBlur={saveCurrentLmsUnitImages} onChange={(event) => updateLmsUnitForm({ ...lmsUnitFormRef.current, image: event.target.value })} />
+                <input className="cyber-input" placeholder="URL รูปภาพประกอบหน่วย" value={lmsUnitForm.image} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, image: event.target.value })} />
               </div>
             </div>
-            <textarea className="cyber-input mt-3" rows="3" placeholder="จุดประสงค์การเรียนรู้ของหน่วย" value={lmsUnitForm.objective} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, objective: event.target.value })} />
+            <textarea className="cyber-input mt-3" rows="3" placeholder="จุดประสงค์การเรียนรู้ของหน่วย" value={lmsUnitForm.objective} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, objective: event.target.value })} />
 
             <div className="unit-editor-group mt-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2695,12 +2730,12 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                       <input type="file" accept="image/*" multiple onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files)} />
                     </label>
                     <div className="lesson-image-list mt-3">
-                      {((section.images || []).length ? section.images : [""]).map((image, imageIndex) => (
+                      {(section.images || []).map((image, imageIndex) => (
                         <div className="lesson-image-row" key={`lesson-image-${sectionIndex}-${imageIndex}`}>
                           <div className="image-slot">
                             {image ? <img src={image} alt={`${section.title || "Lesson"} ${imageIndex + 1}`} /> : <span>รูปที่ {imageIndex + 1}</span>}
                           </div>
-                          <input className="cyber-input" placeholder={`URL รูปที่ ${imageIndex + 1}`} value={image || ""} onBlur={saveCurrentLmsUnitImages} onChange={(event) => updateLessonSectionImage(sectionIndex, imageIndex, event.target.value)} />
+                          <input className="cyber-input" placeholder={`URL รูปที่ ${imageIndex + 1}`} value={image || ""} onChange={(event) => updateLessonSectionImage(sectionIndex, imageIndex, event.target.value)} />
                           <button className="mini-button danger" type="button" onClick={() => removeLessonSectionImage(sectionIndex, imageIndex)}>ลบรูป</button>
                         </div>
                       ))}
@@ -2716,12 +2751,12 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
                         <input type="file" accept="image/*" multiple onChange={(event) => uploadLessonSectionImages(sectionIndex, event.target.files, "content_images")} />
                       </label>
                       <div className="lesson-image-list mt-3">
-                        {((section.content_images || []).length ? section.content_images : [""]).map((image, imageIndex) => (
+                        {(section.content_images || []).map((image, imageIndex) => (
                           <div className="lesson-image-row" key={`content-image-${sectionIndex}-${imageIndex}`}>
                             <div className="image-slot">
                               {image ? <img src={image} alt={`${section.title || "Content"} ${imageIndex + 1}`} /> : <span>รูปเนื้อหาที่ {imageIndex + 1}</span>}
                             </div>
-                            <input className="cyber-input" placeholder={`URL รูปในเนื้อหาที่ ${imageIndex + 1}`} value={image || ""} onBlur={saveCurrentLmsUnitImages} onChange={(event) => updateLessonSectionImage(sectionIndex, imageIndex, event.target.value, "content_images")} />
+                            <input className="cyber-input" placeholder={`URL รูปในเนื้อหาที่ ${imageIndex + 1}`} value={image || ""} onChange={(event) => updateLessonSectionImage(sectionIndex, imageIndex, event.target.value, "content_images")} />
                             <button className="mini-button danger" type="button" onClick={() => removeLessonSectionImage(sectionIndex, imageIndex, "content_images")}>ลบรูป</button>
                           </div>
                         ))}
@@ -2757,23 +2792,23 @@ function AdminPanel({ onBack, theme, onToggleTheme }) {
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <textarea className="cyber-input" rows="4" placeholder="กรณีศึกษา" value={lmsUnitForm.case_study} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, case_study: event.target.value })} />
-              <textarea className="cyber-input" rows="4" placeholder="กิจกรรม/ใบงาน" value={lmsUnitForm.workshop} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, workshop: event.target.value })} />
-              <textarea className="cyber-input" rows="4" placeholder="ชิ้นงาน/ผลผลิตที่คาดหวัง" value={lmsUnitForm.product} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, product: event.target.value })} />
+              <textarea className="cyber-input" rows="4" placeholder="กรณีศึกษา" value={lmsUnitForm.case_study} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, case_study: event.target.value })} />
+              <textarea className="cyber-input" rows="4" placeholder="กิจกรรม/ใบงาน" value={lmsUnitForm.workshop} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, workshop: event.target.value })} />
+              <textarea className="cyber-input" rows="4" placeholder="ชิ้นงาน/ผลผลิตที่คาดหวัง" value={lmsUnitForm.product} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, product: event.target.value })} />
             </div>
 
             <div className="unit-editor-group mt-5">
               <h3>เกมประจำหน่วย</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <input className="cyber-input" placeholder="ชื่อเกม" value={lmsUnitForm.game.title || ""} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, game: { ...lmsUnitForm.game, title: event.target.value } })} />
-                <input className="cyber-input" placeholder="ประเภทเกม" value={lmsUnitForm.game.type || ""} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, game: { ...lmsUnitForm.game, type: event.target.value } })} />
-                <select className="cyber-input" value={lmsUnitForm.game.existing_key || ""} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, game: { ...lmsUnitForm.game, existing_key: event.target.value, status: event.target.value ? "available" : "planned" } })}>
+                <input className="cyber-input" placeholder="ชื่อเกม" value={lmsUnitForm.game.title || ""} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, game: { ...lmsUnitFormRef.current.game, title: event.target.value } })} />
+                <input className="cyber-input" placeholder="ประเภทเกม" value={lmsUnitForm.game.type || ""} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, game: { ...lmsUnitFormRef.current.game, type: event.target.value } })} />
+                <select className="cyber-input" value={lmsUnitForm.game.existing_key || ""} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, game: { ...lmsUnitFormRef.current.game, existing_key: event.target.value, status: event.target.value ? "available" : "planned" } })}>
                   <option value="">ยังไม่มีเกมในระบบ/วางแผนเพิ่ม</option>
                   {Object.entries(gameLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                 </select>
-                <input className="cyber-input" placeholder="แผนสร้างเกมเพิ่มเติม" value={lmsUnitForm.game.planned_game || ""} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, game: { ...lmsUnitForm.game, planned_game: event.target.value } })} />
+                <input className="cyber-input" placeholder="แผนสร้างเกมเพิ่มเติม" value={lmsUnitForm.game.planned_game || ""} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, game: { ...lmsUnitFormRef.current.game, planned_game: event.target.value } })} />
               </div>
-              <textarea className="cyber-input mt-3" rows="3" placeholder="คำอธิบายเกมหรือกิจกรรม" value={lmsUnitForm.game.description || ""} onChange={(event) => setLmsUnitForm({ ...lmsUnitForm, game: { ...lmsUnitForm.game, description: event.target.value } })} />
+              <textarea className="cyber-input mt-3" rows="3" placeholder="คำอธิบายเกมหรือกิจกรรม" value={lmsUnitForm.game.description || ""} onChange={(event) => editLmsUnitForm({ ...lmsUnitFormRef.current, game: { ...lmsUnitFormRef.current.game, description: event.target.value } })} />
             </div>
           </form>
         </section>}
